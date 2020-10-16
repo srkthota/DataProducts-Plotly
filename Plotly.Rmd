@@ -1,0 +1,94 @@
+---
+title: "R Markdown and Plotly"
+author: "Srikanth"
+date: "16/10/2020"
+output: 
+  ioslides_presentation:
+     keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+
+library(plotly)
+library(maps)
+
+```
+
+## simple plot_ly
+
+```{r, fig.align='center', message = FALSE, echo = FALSE,warning=FALSE}
+library(plotly)
+x =  1:10
+y =  1:10
+df <- data.frame(x, y)^2
+
+p <- ggplot(df, aes(x = x, y = y)) + geom_line() + labs(x = "X", y = "Y", title = "X and Y")
+
+ggplotly(p)
+```
+
+## simple plot_ly showing diamonds price
+
+```{r,message=FALSE,warning=FALSE, echo=FALSE}
+
+p1 <- plot_ly(diamonds, x = ~price) %>%
+  add_histogram(name = "plotly.js")
+
+price_hist <- function(method = "FD") {
+  h <- hist(diamonds$price, breaks = method, plot = FALSE)
+  plot_ly(x = h$mids, y = h$counts) %>% add_bars(name = method)
+}
+
+subplot(
+  p1, price_hist(), price_hist("Sturges"),  price_hist("Scott"),
+  nrows = 4, shareX = TRUE
+)
+
+```
+
+## simple plot_ly showing county map
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+
+map_data("county") %>%
+    group_by(group) %>%
+    plot_ly(x = ~long, y = ~lat) %>%
+    add_polygons() %>%
+    layout(
+        xaxis = list(title = "", showgrid = FALSE, showticklabels = FALSE),
+        yaxis = list(title = "", showgrid = FALSE, showticklabels = FALSE)
+    )
+
+```
+
+## Another plot_ly showing county map
+
+```{r,message=FALSE,warning=FALSE,echo=FALSE}
+
+dfb <- world.cities[world.cities$country.etc=="Brazil",]
+dfb$poph <- paste(dfb$name, "Pop", round(dfb$pop/1e6,2), " millions")
+dfb$q <- with(dfb, cut(pop, quantile(pop), include.lowest = T))
+levels(dfb$q) <- paste(c("1st", "2nd", "3rd", "4th"), "Quantile")
+dfb$q <- as.ordered(dfb$q)
+
+ge <- list(
+  scope = 'south america',
+  showland = TRUE,
+  landcolor = toRGB("gray85"),
+  subunitwidth = 1,
+  countrywidth = 1,
+  subunitcolor = toRGB("white"),
+  countrycolor = toRGB("white")
+)
+
+plot_geo(dfb, lon = ~long, lat = ~lat, text = ~poph,
+    marker = ~list(size = sqrt(pop/10000) + 1, line = list(width = 0)),
+    color = ~q, locationmode = 'country names') %>%
+layout(geo = ge, title = 'Populations<br>(Click legend to toggle)')
+
+```
